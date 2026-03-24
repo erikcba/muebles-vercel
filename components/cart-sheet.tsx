@@ -78,7 +78,7 @@ export function CartSheet() {
               <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                 {item.furniture.image_url ? (
                   <Image
-                    src={item.furniture.image_url}
+                    src={item.furniture.image_url.split(',')[0]}
                     alt={item.furniture.name}
                     fill
                     className="object-cover"

@@ -45,7 +45,7 @@ export function FurnitureCard({ furniture, onViewDetails }: FurnitureCardProps) 
       <div className="relative aspect-square overflow-hidden bg-muted">
         {furniture.image_url ? (
           <Image
-            src={furniture.image_url}
+            src={furniture.image_url.split(',')[0]}
             alt={furniture.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -59,11 +59,7 @@ export function FurnitureCard({ furniture, onViewDetails }: FurnitureCardProps) 
         {/* Badges y overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
-        {furniture.is_custom && (
-          <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">
-            A Medida
-          </Badge>
-        )}
+
         
         {/* Botón ver detalles en hover */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

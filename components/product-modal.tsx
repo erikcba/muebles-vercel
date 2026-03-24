@@ -31,10 +31,7 @@ export function ProductModal({ furniture, open, onOpenChange }: ProductModalProp
   const cartItem = items.find(item => item.furniture.id === furniture.id)
   const currentCartQuantity = cartItem?.quantity || 0
 
-  // Simular galeria de imagenes (en produccion vendria de la BD)
-  const images = furniture.image_url 
-    ? [furniture.image_url, furniture.image_url, furniture.image_url] 
-    : []
+  const images = furniture.image_url ? furniture.image_url.split(',') : []
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -87,11 +84,7 @@ export function ProductModal({ furniture, open, onOpenChange }: ProductModalProp
                 </div>
               )}
               
-              {furniture.is_custom && (
-                <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground text-sm px-3 py-1">
-                  A Medida
-                </Badge>
-              )}
+
 
               {/* Navegacion de imagenes */}
               {images.length > 1 && (
@@ -179,17 +172,7 @@ export function ProductModal({ furniture, open, onOpenChange }: ProductModalProp
                   </div>
                 )}
 
-                {furniture.is_custom && (
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-accent/10 border border-accent/20">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/20">
-                      <Package className="h-5 w-5 text-accent" />
-                    </div>
-                    <div>
-                      <span className="font-semibold text-foreground">Fabricado a Medida</span>
-                      <p className="text-sm text-muted-foreground">Personalizamos dimensiones y acabados</p>
-                    </div>
-                  </div>
-                )}
+
               </div>
 
               {currentCartQuantity > 0 && (

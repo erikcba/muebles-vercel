@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import type { Furniture, Category } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,12 +29,30 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
     name: furniture?.name || '',
     description: furniture?.description || '',
     price: furniture?.price || 0,
-    image_url: furniture?.image_url || '',
+    imageUrls: furniture?.image_url ? furniture.image_url.split(',') : [''],
     category_id: furniture?.category_id || '',
     dimensions: furniture?.dimensions || '',
-    material: furniture?.material || '',
-    is_custom: furniture?.is_custom || false,
+    materials: furniture?.materials || '',
   })
+
+  const handleAddImageUrl = () => {
+    setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ''] }))
+  }
+
+  const handleRemoveImageUrl = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+    }))
+  }
+
+  const handleImageUrlChange = (index: number, value: string) => {
+    setFormData(prev => {
+      const newUrls = [...prev.imageUrls]
+      newUrls[index] = value
+      return { ...prev, imageUrls: newUrls }
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,11 +62,10 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
       name: formData.name,
       description: formData.description || null,
       price: Number(formData.price),
-      image_url: formData.image_url || null,
+      image_url: formData.imageUrls.filter(url => url.trim() !== '').join(',') || null,
       category_id: formData.category_id || null,
       dimensions: formData.dimensions || null,
-      material: formData.material || null,
-      is_custom: formData.is_custom,
+      materials: formData.materials || null,
     }
     
     await onSave(data)
@@ -113,14 +130,40 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="image_url">URL de Imagen</FieldLabel>
-          <Input
-            id="image_url"
-            type="url"
-            value={formData.image_url}
-            onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-            placeholder="https://ejemplo.com/imagen.jpg"
-          />
+          <FieldLabel>URLs de Imágenes</FieldLabel>
+          <div className="space-y-3">
+            {formData.imageUrls.map((url, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  value={url}
+                  onChange={e => handleImageUrlChange(index, e.target.value)}
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                />
+                {formData.imageUrls.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleRemoveImageUrl(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={handleAddImageUrl}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar otra imagen
+            </Button>
+          </div>
         </Field>
 
         <Field>
@@ -134,25 +177,14 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="material">Material</FieldLabel>
+          <FieldLabel htmlFor="materials">Materiales</FieldLabel>
           <Input
-            id="material"
-            value={formData.material}
-            onChange={e => setFormData(prev => ({ ...prev, material: e.target.value }))}
+            id="materials"
+            value={formData.materials}
+            onChange={e => setFormData(prev => ({ ...prev, materials: e.target.value }))}
             placeholder="Roble macizo"
           />
         </Field>
-
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="is_custom"
-            checked={formData.is_custom}
-            onCheckedChange={checked => setFormData(prev => ({ ...prev, is_custom: !!checked }))}
-          />
-          <label htmlFor="is_custom" className="text-sm font-medium cursor-pointer">
-            Mueble a medida
-          </label>
-        </div>
       </FieldGroup>
 
       <div className="flex justify-end gap-3 pt-4">

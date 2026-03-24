@@ -139,7 +139,7 @@ export function FurnitureManager({ furniture, categories, onFurnitureChange }: F
                 <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
                   {item.image_url ? (
                     <Image
-                      src={item.image_url}
+                      src={item.image_url.split(',')[0]}
                       alt={item.name}
                       fill
                       className="object-cover"
@@ -159,11 +159,6 @@ export function FurnitureManager({ furniture, categories, onFurnitureChange }: F
                     {item.categories?.name && (
                       <Badge variant="secondary" className="text-xs">
                         {item.categories.name}
-                      </Badge>
-                    )}
-                    {item.is_custom && (
-                      <Badge variant="outline" className="text-xs">
-                        A medida
                       </Badge>
                     )}
                   </div>
