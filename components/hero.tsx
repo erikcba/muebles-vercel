@@ -18,7 +18,7 @@ export function Hero() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />
       </div>
-      
+
       <div className="container mx-auto px-4 py-24 md:py-32 relative z-10">
         <div className="max-w-2xl">
           <span className="inline-block text-sm font-medium text-primary-foreground/80 mb-4 tracking-widest uppercase">
@@ -28,8 +28,8 @@ export function Hero() {
             Muebles a Medida para Tu Hogar
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-xl leading-relaxed">
-            Disenamos y fabricamos muebles unicos con la mas alta calidad en maderas nobles. 
-            Cada pieza es creada especialmente para ti.
+            Diseñamos y fabricamos muebles únicos con la mas alta calidad en maderas nobles.
+            Cada pieza es creada especialmente para vos.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button asChild size="lg" className="text-base cursor-pointer">

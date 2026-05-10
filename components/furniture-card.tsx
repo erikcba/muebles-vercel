@@ -1,16 +1,16 @@
 "use client"
 
 import Image from 'next/image'
-import { Plus, Check, Ruler, Eye } from 'lucide-react'
+import { Plus, Check, Ruler, Eye, TreePine } from 'lucide-react'
 import { useState } from 'react'
-import type { Furniture } from '@/lib/types'
+import type { Furniture, WoodType } from '@/lib/types'
 import { useCart } from '@/components/cart-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 interface FurnitureCardProps {
-  furniture: Furniture
+  furniture: Furniture & { furniture_wood_types?: { wood_types: WoodType }[] }
   onViewDetails: (furniture: Furniture) => void
 }
 
@@ -90,9 +90,32 @@ export function FurnitureCard({ furniture, onViewDetails }: FurnitureCardProps) 
         
         {/* Dimensiones con icono de regla */}
         {furniture.dimensions && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
             <Ruler className="h-3.5 w-3.5" />
             <span>{furniture.dimensions}</span>
+          </div>
+        )}
+
+        {/* Tipos de madera */}
+        {furniture.furniture_wood_types && furniture.furniture_wood_types.length > 0 && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-3 border-t">
+            <TreePine className="h-4 w-4 shrink-0" />
+            <div className="flex -space-x-2">
+              {furniture.furniture_wood_types.map((rel, index) => {
+                const wood = rel.wood_types
+                if (!wood) return null
+                return (
+                  <div key={wood.id} className="relative w-6 h-6 rounded-full overflow-hidden border-2 border-background bg-muted" title={wood.name}>
+                    {wood.image_url ? (
+                      <Image src={wood.image_url} alt={wood.name} fill className="object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-primary/20"></div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <span className="ml-1 line-clamp-1">{furniture.furniture_wood_types.map(rel => rel.wood_types?.name).filter(Boolean).join(', ')}</span>
           </div>
         )}
       </CardContent>

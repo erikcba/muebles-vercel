@@ -7,6 +7,15 @@ export interface Category {
   updated_at: string
 }
 
+export interface WoodType {
+  id: string
+  name: string
+  description: string | null
+  image_url: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Furniture {
   id: string
   name: string
@@ -20,9 +29,11 @@ export interface Furniture {
   created_at: string
   updated_at: string
   category?: Category
+  furniture_wood_types?: { wood_types: WoodType }[]
 }
 
 export interface CartItem {
-  furniture: Furniture
+  furniture: Furniture & { furniture_wood_types?: { wood_types: WoodType }[] }
   quantity: number
+  selectedWoodType?: WoodType
 }

@@ -10,7 +10,7 @@ export default async function HomePage() {
   const supabase = await createClient()
   
   const [{ data: furniture }, { data: categories }] = await Promise.all([
-    supabase.from('furniture').select('*').order('created_at', { ascending: false }),
+    supabase.from('furniture').select('*, categories(name), furniture_wood_types(wood_types(*))').order('created_at', { ascending: false }),
     supabase.from('categories').select('*').order('name')
   ])
 

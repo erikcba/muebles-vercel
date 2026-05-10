@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Loader2, Plus, Trash2, X, Image as ImageIcon } from 'lucide-react'
-import type { Furniture, Category } from '@/lib/types'
+import type { Furniture, Category, WoodType } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,13 +18,14 @@ import {
 import Image from 'next/image'
 
 interface FurnitureFormProps {
-  furniture: Furniture | null
+  furniture: (Furniture & { furniture_wood_types?: { wood_types: WoodType }[] }) | null
   categories: Category[]
-  onSave: (data: Partial<Furniture>) => Promise<void>
+  woodTypes: WoodType[]
+  onSave: (data: Partial<Furniture>, selectedWoodTypeIds: string[]) => Promise<void>
   onCancel: () => void
 }
 
-export function FurnitureForm({ furniture, categories, onSave, onCancel }: FurnitureFormProps) {
+export function FurnitureForm({ furniture, categories, woodTypes, onSave, onCancel }: FurnitureFormProps) {
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
   
@@ -41,6 +42,9 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
     furniture?.image_url ? furniture.image_url.split(',').filter(url => url.trim() !== '') : []
   )
   const [newImages, setNewImages] = useState<File[]>([])
+  const [selectedWoodTypes, setSelectedWoodTypes] = useState<string[]>(
+    furniture?.furniture_wood_types?.map(rel => rel.wood_types?.id).filter(Boolean) || []
+  )
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -101,7 +105,7 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
         materials: formData.materials || null,
       }
       
-      await onSave(data)
+      await onSave(data, selectedWoodTypes)
     } catch (error) {
       console.error(error)
     } finally {
@@ -242,13 +246,54 @@ export function FurnitureForm({ furniture, categories, onSave, onCancel }: Furni
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="materials">Materiales</FieldLabel>
+          <FieldLabel htmlFor="materials">Materiales (Texto General)</FieldLabel>
           <Input
             id="materials"
             value={formData.materials}
             onChange={e => setFormData(prev => ({ ...prev, materials: e.target.value }))}
-            placeholder="Roble macizo"
+            placeholder="Estructura de hierro, terminación..."
           />
+        </Field>
+
+        <Field>
+          <FieldLabel>Tipos de Madera Compatibles</FieldLabel>
+          <p className="text-xs text-muted-foreground mb-2">Selecciona las maderas con las que se puede fabricar este mueble para personalizarlo.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {woodTypes.map(wood => {
+              const isSelected = selectedWoodTypes.includes(wood.id)
+              return (
+                <div 
+                  key={wood.id}
+                  onClick={() => {
+                    setSelectedWoodTypes(prev => 
+                      isSelected 
+                        ? prev.filter(id => id !== wood.id)
+                        : [...prev, wood.id]
+                    )
+                  }}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                    isSelected 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border bg-card hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                >
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden border">
+                    {wood.image_url ? (
+                      <Image src={wood.image_url} alt={wood.name} fill className="object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center text-[10px]">
+                        Sin img
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-center">{wood.name}</span>
+                </div>
+              )
+            })}
+            {woodTypes.length === 0 && (
+              <p className="text-sm text-muted-foreground col-span-full">No hay tipos de madera creados.</p>
+            )}
+          </div>
         </Field>
       </FieldGroup>
 

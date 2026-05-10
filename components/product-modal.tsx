@@ -1,9 +1,9 @@
 "use client"
 
 import Image from 'next/image'
-import { useState } from 'react'
-import { Minus, Plus, ShoppingCart, Ruler, Tag, Package, ChevronLeft, ChevronRight } from 'lucide-react'
-import type { Furniture } from '@/lib/types'
+import { useState, useEffect } from 'react'
+import { Minus, Plus, ShoppingCart, Ruler, Tag, Package, ChevronLeft, ChevronRight, TreePine } from 'lucide-react'
+import type { Furniture, WoodType } from '@/lib/types'
 import { useCart } from '@/components/cart-provider'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog'
 
 interface ProductModalProps {
-  furniture: Furniture | null
+  furniture: (Furniture & { furniture_wood_types?: { wood_types: WoodType }[] }) | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -25,10 +25,22 @@ export function ProductModal({ furniture, open, onOpenChange }: ProductModalProp
   const { addItem, items } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  
+  const availableWoodTypes = furniture?.furniture_wood_types?.map(rel => rel.wood_types).filter(Boolean) as WoodType[] || []
+  const [selectedWoodType, setSelectedWoodType] = useState<WoodType | null>(null)
+
+  useEffect(() => {
+    if (open && availableWoodTypes.length > 0) {
+      setSelectedWoodType(availableWoodTypes[0])
+    }
+  }, [open, furniture?.id])
 
   if (!furniture) return null
 
-  const cartItem = items.find(item => item.furniture.id === furniture.id)
+  const cartItem = items.find(item => 
+    item.furniture.id === furniture.id && 
+    item.selectedWoodType?.id === selectedWoodType?.id
+  )
   const currentCartQuantity = cartItem?.quantity || 0
 
   const images = furniture.image_url ? furniture.image_url.split(',') : []
@@ -42,9 +54,7 @@ export function ProductModal({ furniture, open, onOpenChange }: ProductModalProp
   }
 
   const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addItem(furniture)
-    }
+    addItem(furniture, quantity, selectedWoodType || undefined)
     setQuantity(1)
     onOpenChange(false)
   }
@@ -178,8 +188,40 @@ export function ProductModal({ furniture, open, onOpenChange }: ProductModalProp
               {currentCartQuantity > 0 && (
                 <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-6">
                   <p className="text-sm text-primary font-medium">
-                    Ya tienes {currentCartQuantity} unidad(es) en tu carrito
+                    Ya tienes {currentCartQuantity} unidad(es) de esta variante en tu carrito
                   </p>
+                </div>
+              )}
+
+              {/* Selector de madera */}
+              {availableWoodTypes.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <TreePine className="h-4 w-4 text-muted-foreground" />
+                    Seleccionar Madera
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                    {availableWoodTypes.map(wood => (
+                      <button
+                        key={wood.id}
+                        onClick={() => setSelectedWoodType(wood)}
+                        className={`flex items-center gap-3 p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                          selectedWoodType?.id === wood.id
+                            ? 'border-primary ring-1 ring-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-muted shrink-0">
+                          {wood.image_url ? (
+                            <Image src={wood.image_url} alt={wood.name} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] bg-primary/20" />
+                          )}
+                        </div>
+                        <span className="text-sm font-medium line-clamp-2">{wood.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

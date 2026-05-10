@@ -3,11 +3,10 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
-import type { Furniture, Category, WoodType } from '@/lib/types'
+import type { WoodType } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -27,137 +26,88 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { FurnitureForm } from '@/components/admin/furniture-form'
+import { WoodTypeForm } from '@/components/admin/wood-type-form'
 
-interface FurnitureManagerProps {
-  furniture: (Furniture & { categories: { name: string } | null, furniture_wood_types?: { wood_types: WoodType }[] })[]
-  categories: Category[]
+interface WoodTypeManagerProps {
   woodTypes: WoodType[]
-  onFurnitureChange: (furniture: (Furniture & { categories: { name: string } | null, furniture_wood_types?: { wood_types: WoodType }[] })[]) => void
+  onWoodTypesChange: (woodTypes: WoodType[]) => void
 }
 
-export function FurnitureManager({ furniture, categories, woodTypes, onFurnitureChange }: FurnitureManagerProps) {
+export function WoodTypeManager({ woodTypes, onWoodTypesChange }: WoodTypeManagerProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingFurniture, setEditingFurniture] = useState<Furniture | null>(null)
+  const [editingWoodType, setEditingWoodType] = useState<WoodType | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const supabase = createClient()
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(price)
-  }
-
-  const handleSave = async (data: Partial<Furniture>, selectedWoodTypeIds: string[]) => {
-    let savedFurnitureId = editingFurniture?.id
-
-    if (editingFurniture) {
+  const handleSave = async (data: Partial<WoodType>) => {
+    if (editingWoodType) {
       const { data: updated, error } = await supabase
-        .from('furniture')
-        .update(data)
-        .eq('id', editingFurniture.id)
-        .select('*, categories(name)')
+        .from('wood_types')
+        .update({
+          name: data.name,
+          description: data.description,
+          image_url: data.image_url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingWoodType.id)
+        .select()
         .single()
 
       if (!error && updated) {
-        savedFurnitureId = updated.id
+        onWoodTypesChange(woodTypes.map(w => w.id === updated.id ? updated as WoodType : w))
       }
     } else {
       const { data: created, error } = await supabase
-        .from('furniture')
-        .insert(data)
-        .select('*, categories(name)')
+        .from('wood_types')
+        .insert({
+          name: data.name,
+          description: data.description,
+          image_url: data.image_url
+        })
+        .select()
         .single()
 
       if (!error && created) {
-        savedFurnitureId = created.id
+        onWoodTypesChange([...woodTypes, created as WoodType].sort((a, b) => a.name.localeCompare(b.name)))
       }
     }
-
-    // Guardar relaciones de madera
-    if (savedFurnitureId) {
-      // 1. Eliminar relaciones existentes si estamos editando
-      if (editingFurniture) {
-        await supabase
-          .from('furniture_wood_types')
-          .delete()
-          .eq('furniture_id', savedFurnitureId)
-      }
-
-      // 2. Insertar nuevas relaciones
-      if (selectedWoodTypeIds.length > 0) {
-        const relations = selectedWoodTypeIds.map(woodId => ({
-          furniture_id: savedFurnitureId,
-          wood_type_id: woodId
-        }))
-        await supabase.from('furniture_wood_types').insert(relations)
-      }
-
-      // 3. Volver a consultar el mueble creado/actualizado para tener las relaciones frescas
-      const { data: freshFurniture } = await supabase
-        .from('furniture')
-        .select('*, categories(name), furniture_wood_types(wood_types(*))')
-        .eq('id', savedFurnitureId)
-        .single()
-
-      if (freshFurniture) {
-        if (editingFurniture) {
-          onFurnitureChange(furniture.map(f => f.id === freshFurniture.id ? freshFurniture : f))
-        } else {
-          onFurnitureChange([freshFurniture, ...furniture])
-        }
-      }
-    }
-
     setIsDialogOpen(false)
-    setEditingFurniture(null)
+    setEditingWoodType(null)
   }
 
   const handleDelete = async (id: string) => {
     setDeletingId(id)
-    const { error } = await supabase.from('furniture').delete().eq('id', id)
+    const { error } = await supabase.from('wood_types').delete().eq('id', id)
     if (!error) {
-      onFurnitureChange(furniture.filter(f => f.id !== id))
+      onWoodTypesChange(woodTypes.filter(w => w.id !== id))
     }
     setDeletingId(null)
-  }
-
-  const openEditDialog = (item: Furniture) => {
-    setEditingFurniture(item)
-    setIsDialogOpen(true)
-  }
-
-  const openCreateDialog = () => {
-    setEditingFurniture(null)
-    setIsDialogOpen(true)
   }
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Muebles</CardTitle>
+        <CardTitle>Tipos de Madera</CardTitle>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
+            <Button onClick={() => setEditingWoodType(null)}>
               <Plus className="mr-2 h-4 w-4" />
-              Agregar Mueble
+              Agregar Madera
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle className="font-serif">
-                {editingFurniture ? 'Editar Mueble' : 'Agregar Mueble'}
+                {editingWoodType ? 'Editar Tipo de Madera' : 'Agregar Tipo de Madera'}
               </DialogTitle>
               <DialogDescription>
-                {editingFurniture ? 'Modifica los datos del mueble seleccionado.' : 'Completa el formulario para agregar un nuevo mueble al catalogo.'}
+                {editingWoodType 
+                  ? 'Modifica los datos del tipo de madera.' 
+                  : 'Agrega un nuevo tipo de madera para usar en tus muebles.'}
               </DialogDescription>
             </DialogHeader>
-            <FurnitureForm
-              furniture={editingFurniture}
-              categories={categories}
-              woodTypes={woodTypes}
+            <WoodTypeForm
+              woodType={editingWoodType}
               onSave={handleSave}
               onCancel={() => setIsDialogOpen(false)}
             />
@@ -165,13 +115,13 @@ export function FurnitureManager({ furniture, categories, woodTypes, onFurniture
         </Dialog>
       </CardHeader>
       <CardContent>
-        {furniture.length === 0 ? (
+        {woodTypes.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
-            No hay muebles. Agrega el primero.
+            No hay tipos de madera. Agrega el primero.
           </p>
         ) : (
           <div className="space-y-3">
-            {furniture.map(item => (
+            {woodTypes.map(item => (
               <div
                 key={item.id}
                 className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
@@ -179,35 +129,31 @@ export function FurnitureManager({ furniture, categories, woodTypes, onFurniture
                 <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
                   {item.image_url ? (
                     <Image
-                      src={item.image_url.split(',')[0]}
+                      src={item.image_url}
                       alt={item.name}
                       fill
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs text-center p-1">
                       Sin img
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium truncate">{item.name}</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-primary font-semibold">
-                      {formatPrice(item.price)}
-                    </span>
-                    {item.categories?.name && (
-                      <Badge variant="secondary" className="text-xs">
-                        {item.categories.name}
-                      </Badge>
-                    )}
-                  </div>
+                  {item.description && (
+                    <p className="text-sm text-muted-foreground truncate">{item.description}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => openEditDialog(item)}
+                    onClick={() => {
+                      setEditingWoodType(item)
+                      setIsDialogOpen(true)
+                    }}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -223,9 +169,9 @@ export function FurnitureManager({ furniture, categories, woodTypes, onFurniture
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Eliminar mueble</AlertDialogTitle>
+                        <AlertDialogTitle>Eliminar tipo de madera</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta acción no se puede deshacer. Se eliminará permanentemente &ldquo;{item.name}&rdquo; del catálogo.
+                          Esta acción no se puede deshacer. Se eliminará permanentemente &ldquo;{item.name}&rdquo;.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

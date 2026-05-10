@@ -21,7 +21,10 @@ export function CartSheet() {
 
   const sendToWhatsApp = () => {
     const message = items
-      .map(item => `- ${item.furniture.name} x${item.quantity} - ${formatPrice(item.furniture.price * item.quantity)}`)
+      .map(item => {
+        const variantText = item.selectedWoodType ? ` (Madera: ${item.selectedWoodType.name})` : ''
+        return `- ${item.furniture.name}${variantText} x${item.quantity} - ${formatPrice(item.furniture.price * item.quantity)}`
+      })
       .join('\n')
     
     const fullMessage = `Hola! Me interesa realizar el siguiente pedido:\n\n${message}\n\n*Total: ${formatPrice(totalPrice)}*\n\n¿Podrian confirmar disponibilidad y tiempo de entrega?`
@@ -93,14 +96,21 @@ export function CartSheet() {
               {/* Info del producto */}
               <div className="flex-1 min-w-0 flex flex-col">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-semibold text-foreground line-clamp-2 text-sm leading-tight">
-                    {item.furniture.name}
-                  </h4>
+                  <div>
+                    <h4 className="font-semibold text-foreground line-clamp-2 text-sm leading-tight">
+                      {item.furniture.name}
+                    </h4>
+                    {item.selectedWoodType && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Madera: {item.selectedWoodType.name}
+                      </p>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer flex-shrink-0 -mt-1 -mr-1"
-                    onClick={() => removeItem(item.furniture.id)}
+                    onClick={() => removeItem(item.furniture.id, item.selectedWoodType?.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -117,7 +127,7 @@ export function CartSheet() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 rounded-full cursor-pointer hover:bg-background"
-                      onClick={() => updateQuantity(item.furniture.id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.furniture.id, item.selectedWoodType?.id, item.quantity - 1)}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
@@ -126,7 +136,7 @@ export function CartSheet() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 rounded-full cursor-pointer hover:bg-background"
-                      onClick={() => updateQuantity(item.furniture.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.furniture.id, item.selectedWoodType?.id, item.quantity + 1)}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>

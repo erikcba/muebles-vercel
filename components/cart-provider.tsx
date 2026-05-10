@@ -1,13 +1,13 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import type { Furniture, CartItem } from '@/lib/types'
+import type { Furniture, CartItem, WoodType } from '@/lib/types'
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (furniture: Furniture, quantity?: number) => void
-  removeItem: (furnitureId: string) => void
-  updateQuantity: (furnitureId: string, quantity: number) => void
+  addItem: (furniture: Furniture, quantity?: number, selectedWoodType?: WoodType) => void
+  removeItem: (furnitureId: string, woodTypeId?: string) => void
+  updateQuantity: (furnitureId: string, woodTypeId: string | undefined, quantity: number) => void
   clearCart: () => void
   totalItems: number
   totalPrice: number
@@ -18,32 +18,39 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
 
-  const addItem = useCallback((furniture: Furniture, quantity = 1) => {
+  const addItem = useCallback((furniture: Furniture, quantity = 1, selectedWoodType?: WoodType) => {
     setItems(prev => {
-      const existing = prev.find(item => item.furniture.id === furniture.id)
+      const existing = prev.find(item => 
+        item.furniture.id === furniture.id && 
+        item.selectedWoodType?.id === selectedWoodType?.id
+      )
       if (existing) {
         return prev.map(item =>
-          item.furniture.id === furniture.id
+          (item.furniture.id === furniture.id && item.selectedWoodType?.id === selectedWoodType?.id)
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       }
-      return [...prev, { furniture, quantity }]
+      return [...prev, { furniture, quantity, selectedWoodType }]
     })
   }, [])
 
-  const removeItem = useCallback((furnitureId: string) => {
-    setItems(prev => prev.filter(item => item.furniture.id !== furnitureId))
+  const removeItem = useCallback((furnitureId: string, woodTypeId?: string) => {
+    setItems(prev => prev.filter(item => 
+      !(item.furniture.id === furnitureId && item.selectedWoodType?.id === woodTypeId)
+    ))
   }, [])
 
-  const updateQuantity = useCallback((furnitureId: string, quantity: number) => {
+  const updateQuantity = useCallback((furnitureId: string, woodTypeId: string | undefined, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(furnitureId)
+      removeItem(furnitureId, woodTypeId)
       return
     }
     setItems(prev =>
       prev.map(item =>
-        item.furniture.id === furnitureId ? { ...item, quantity } : item
+        (item.furniture.id === furnitureId && item.selectedWoodType?.id === woodTypeId)
+          ? { ...item, quantity } 
+          : item
       )
     )
   }, [removeItem])
